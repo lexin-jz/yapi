@@ -387,6 +387,11 @@ let routerConfig = {
       action: 'schema2json',
       path: 'schema2json',
       method: 'post'
+    },
+    {
+      action: 'queryCatAndInterface',
+      path: 'queryCatAndInterface',
+      method: 'post'
     }
   ],
   log: [
@@ -498,7 +503,32 @@ let routerConfig = {
       action: 'getCaseEnvList',
       path: 'case_env_list',
       method: 'get'
-    }
+    },
+    {
+      action: 'queryColAndInterfaceCase',
+      path: 'queryColAndInterfaceCase',
+      method: 'post'
+    },
+    {
+      action: 'referColListByCase',
+      path: 'referColListByCase',
+      method: 'post'
+    },
+    {
+      action: 'addRefer',
+      path: 'addRefer',
+      method: 'post'
+    },
+    {
+      action: 'deleteReferCaseById',
+      path: 'deleteReferCaseById',
+      method: 'post'
+    },
+    {
+      action: 'deleteAllReferCase',
+      path: 'deleteAllReferCase',
+      method: 'post'
+    },
   ],
   test: [
     {

@@ -45,7 +45,8 @@ const InterfaceRoute = props => {
 
 InterfaceRoute.propTypes = {
   match: PropTypes.object,
-  history: PropTypes.object
+  history: PropTypes.object,
+  location: PropTypes.object
 };
 
 @connect(
@@ -84,7 +85,7 @@ class Interface extends Component {
     }
     this.props.history.push('/project/' + params.id + '/interface/' + action);
   };
-  async componentWillMount() {
+  async componentDidMount() {
     this.props.setColData({
       isShowCol: true
     });

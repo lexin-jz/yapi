@@ -91,13 +91,14 @@ class ProjectData extends Component {
     swaggerUrlData: PropTypes.string
   };
 
-  componentWillMount() {
+  UNSAFE_componentWillMount() {
     axios.get(`/api/interface/getCatMenu?project_id=${this.props.match.params.id}`).then(data => {
       if (data.data.errcode === 0) {
         let menuList = data.data.data;
         this.setState({
-          menuList: menuList,
-          selectCatid: menuList[0]._id
+          menuList: [{name: '根目录', parent_id: -1, _id:-1},...menuList],
+          // selectCatid: menuList[0]._id
+          selectCatid: -1
         });
       }
     });

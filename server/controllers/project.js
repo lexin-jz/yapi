@@ -6,6 +6,7 @@ const interfaceModel = require('../models/interface.js');
 const interfaceColModel = require('../models/interfaceCol.js');
 const interfaceCaseModel = require('../models/interfaceCase.js');
 const interfaceCatModel = require('../models/interfaceCat.js');
+const interfaceCaseReferModel = require('../models/interfaceCaseRefer.js');
 const groupModel = require('../models/group');
 const commons = require('../utils/commons.js');
 const userModel = require('../models/user.js');
@@ -223,20 +224,21 @@ class projectController extends baseController {
     };
 
     let result = await this.Model.save(data);
-    let colInst = yapi.getInst(interfaceColModel);
+    // let colInst = yapi.getInst(interfaceColModel);
     let catInst = yapi.getInst(interfaceCatModel);
     if (result._id) {
-      await colInst.save({
-        name: '公共测试集',
-        project_id: result._id,
-        desc: '公共测试集',
-        uid: this.getUid(),
-        add_time: yapi.commons.time(),
-        up_time: yapi.commons.time()
-      });
+      // await colInst.save({
+      //   name: '公共测试集',
+      //   project_id: result._id,
+      //   desc: '公共测试集',
+      //   uid: this.getUid(),
+      //   add_time: yapi.commons.time(),
+      //   up_time: yapi.commons.time()
+      // });
       await catInst.save({
         name: '公共分类',
         project_id: result._id,
+        parent_id: -1,
         desc: '公共分类',
         uid: this.getUid(),
         add_time: yapi.commons.time(),
@@ -622,9 +624,11 @@ class projectController extends baseController {
     let interfaceInst = yapi.getInst(interfaceModel);
     let interfaceColInst = yapi.getInst(interfaceColModel);
     let interfaceCaseInst = yapi.getInst(interfaceCaseModel);
+    let interfaceCaseReferInst = yapi.getInst(interfaceCaseReferModel);
     await interfaceInst.delByProjectId(id);
     await interfaceCaseInst.delByProjectId(id);
     await interfaceColInst.delByProjectId(id);
+    await interfaceCaseReferInst.delByProjectId(id);
     yapi.emitHook('project_del', id).then();
     let result = await this.Model.del(id);
     ctx.body = yapi.commons.resReturn(result);

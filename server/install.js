@@ -108,6 +108,17 @@ function setupSql() {
         project_id: 1
       });
 
+      let interfaceCaseRefer = mongoose.connection.db.collection('interface_case_refer');
+      interfaceCol.createIndex({
+        uid: 1
+      });
+      interfaceCaseRefer.createIndex({
+        refer_caseid: 1,
+      });
+      interfaceCaseRefer.createIndex({
+        project_id: 1
+      });
+
       let groupCol = mongoose.connection.db.collection('group');
       groupCol.createIndex({
         uid: 1

@@ -16,9 +16,9 @@
   .menu-title {
     display: flex;
     justify-content: space-between;
-    overflow: hidden;
+    // overflow: hidden;
     .casename {
-      overflow: hidden;
+      // overflow: hidden;
     }
     .case-delete-icon {
       margin-left: 5px;
@@ -27,6 +27,17 @@
     .btns {
       display: none;
     }
+    .refer-star {
+      color:#FFD700;
+      font-size: 20px;
+      padding-right: 3px
+    }
+
+    .refer-star-gray {
+      color:#999999;
+      font-size: 20px;
+      padding-right: 3px;
+    }
   }
   .menu-title:hover {
     .case-delete-icon {
@@ -34,6 +45,7 @@
     }
     .btns {
       display: block;
+      right: 20px;
     }
   }
 }
@@ -43,6 +55,7 @@
   width: 100%;
   padding: 10px;
 }
+
 /*
  * note that styling gu-mirror directly is a bad practice because it's too generic.
  * you're better off giving the draggable elements a unique class and styling that directly!
@@ -183,4 +196,21 @@
 .tree-wrapper {
   min-height: 500px;
   overflow-y: scroll;
+}
+.interface-operation {
+  padding: 0 15px;
+  margin-top: 10px;
+  border-bottom: 1px solid #ccc;
+  height: 32px;
+  .operation-icon {
+    font-size: 23px;
+    padding-right: 15px;
+  }
+}
+.select-title {
+  display: inline-block;
+  width: 250px;
+  height: 32px;
+  line-height: 32px;
+  font-size: 16px;
 }

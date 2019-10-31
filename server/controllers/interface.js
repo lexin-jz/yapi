@@ -22,7 +22,7 @@ const path = require('path');
 
 function handleHeaders(values){
   let isfile = false,
-  isHavaContentType = false;
+  isHaveContentType = false;
   if (values.req_body_type === 'form') {
     values.req_body_form.forEach(item => {
       if (item.type === 'file') {
@@ -33,10 +33,10 @@ function handleHeaders(values){
     values.req_headers.map(item => {
       if (item.name === 'Content-Type') {
         item.value = isfile ? 'multipart/form-data' : 'application/x-www-form-urlencoded';
-        isHavaContentType = true;
+        isHaveContentType = true;
       }
     });
-    if (isHavaContentType === false) {
+    if (isHaveContentType === false) {
       values.req_headers.unshift({
         name: 'Content-Type',
         value: isfile ? 'multipart/form-data' : 'application/x-www-form-urlencoded'
@@ -47,11 +47,11 @@ function handleHeaders(values){
       ? values.req_headers.map(item => {
           if (item.name === 'Content-Type') {
             item.value = 'application/json';
-            isHavaContentType = true;
+            isHaveContentType = true;
           }
         })
       : [];
-    if (isHavaContentType === false) {
+    if (isHaveContentType === false) {
       values.req_headers = values.req_headers || [];
       values.req_headers.unshift({
         name: 'Content-Type',
@@ -564,35 +564,55 @@ class interfaceController extends baseController {
   }
 
   async listByMenu(ctx) {
-    let project_id = ctx.params.project_id;
-    if (!project_id) {
-      return (ctx.body = yapi.commons.resReturn(null, 400, '项目id不能为空'));
-    }
-
-    let project = await this.projectModel.getBaseInfo(project_id);
-    if (!project) {
-      return (ctx.body = yapi.commons.resReturn(null, 406, '不存在的项目'));
-    }
-    if (project.project_type === 'private') {
-      if ((await this.checkAuth(project._id, 'project', 'view')) !== true) {
-        return (ctx.body = yapi.commons.resReturn(null, 406, '没有权限'));
-      }
-    }
-
     try {
-      let result = await this.catModel.list(project_id),
-        newResult = [];
-      for (let i = 0, item, list; i < result.length; i++) {
-        item = result[i].toObject();
-        list = await this.Model.listByCatid(item._id);
-        for (let j = 0; j < list.length; j++) {
-          list[j] = list[j].toObject();
-        }
-
-        item.list = list;
-        newResult[i] = item;
+      let { project_id, parent_id} = ctx.params;
+      if (!project_id) {
+        return (ctx.body = yapi.commons.resReturn(null, 400, '项目id不能为空'));
       }
-      ctx.body = yapi.commons.resReturn(newResult);
+
+      let project = await this.projectModel.getBaseInfo(project_id);
+      if (!project) {
+        return (ctx.body = yapi.commons.resReturn(null, 406, '不存在的项目'));
+      }
+      if (project.project_type === 'private') {
+        if ((await this.checkAuth(project._id, 'project', 'view')) !== true) {
+          return (ctx.body = yapi.commons.resReturn(null, 406, '没有权限'));
+        }
+      }
+
+
+      // let result = await this.catModel.list(project_id,parent_id),
+      //   newResult = [];
+      // for (let i = 0, item, list; i < result.length; i++) {
+      //   item = result[i].toObject();
+      //   list = await this.Model.listByCatid(item._id);
+      //   for (let j = 0; j < list.length; j++) {
+      //     list[j] = list[j].toObject();
+      //   }
+
+      //   item.list = list;
+      //   newResult[i] = item;
+      // }
+      
+      // 由于添加了子目录，该接口修改成返回子目录列表和接口列表
+      let catList = await this.catModel.list(project_id,parent_id),
+      interfaceList =await this.Model.listByCatid(parent_id),
+      newCatList = [],
+      newInterfaceList = [];
+      // 标记分类文件夹
+      for (let i = 0; i < catList.length; i++ ) {
+        newCatList[i] = catList[i].toObject(); 
+        newCatList[i].child_type = 0;
+        newCatList[i].children = [];
+      }
+      // 标记接口
+      for (let i = 0 ; i < interfaceList.length; i++ ) {
+        newInterfaceList[i] = interfaceList[i].toObject();
+        newInterfaceList[i].child_type = 1;
+        newInterfaceList[i].name = newInterfaceList[i].title;
+      }
+      let result = [...newCatList, ...newInterfaceList];
+      ctx.body = yapi.commons.resReturn(result);
     } catch (err) {
       ctx.body = yapi.commons.resReturn(null, 402, err.message);
     }
@@ -891,9 +911,9 @@ class interfaceController extends baseController {
       params = yapi.commons.handleParams(params, {
         name: 'string',
         project_id: 'number',
+        parent_id: 'number',
         desc: 'string'
       });
-
       if (!params.project_id) {
         return (ctx.body = yapi.commons.resReturn(null, 400, '项目id不能为空'));
       }
@@ -911,6 +931,7 @@ class interfaceController extends baseController {
       let result = await this.catModel.save({
         name: params.name,
         project_id: params.project_id,
+        parent_id:  params.parent_id || -1,
         desc: params.desc,
         uid: this.getUid(),
         add_time: yapi.commons.time(),
@@ -925,7 +946,8 @@ class interfaceController extends baseController {
         type: 'project',
         uid: this.getUid(),
         username: username,
-        typeid: params.project_id
+        typeid: params.project_id,
+        parent_id: params.parent_id
       });
 
       ctx.body = yapi.commons.resReturn(result);
@@ -1223,6 +1245,68 @@ class interfaceController extends baseController {
       ctx.body = yapi.commons.resReturn(newResult);
     } catch (err) {
       ctx.body = yapi.commons.resReturn(null, 402, err.message);
+    }
+  }
+
+
+
+  /**
+   * 查询分类集合
+   * @interface /interface/queryCatAndInterface
+   * @method post
+   * @category interface
+   * @foldnumber 10
+   * @param {Number}   project_id 项目id，不能为空
+   * @param {String}   query_text 查询字符串，不能为空
+   * @returns {Object}
+   * @example ./api/interface/queryCatAndInterface
+   */
+
+  async queryCatAndInterface(ctx) {
+    let project_id = ctx.params.project_id;
+    let query_text = ctx.params.query_text;
+
+    if (!project_id || isNaN(project_id)) {
+      return (ctx.body = yapi.commons.resReturn(null, 400, '项目id不能为空'));
+    }
+
+    // if (!query_text || query_text =='') {
+    //   return (ctx.body = yapi.commons.resReturn(null, 400, '查询内容不能为空'));
+    // }
+    try {
+      let project = await this.projectModel.getBaseInfo(project_id);
+      if (project.project_type === 'private') {
+        if ((await this.checkAuth(project._id, 'project', 'view')) !== true) {
+          return (ctx.body = yapi.commons.resReturn(null, 406, '没有权限'));
+        }
+      }
+
+      let catList = await this.catModel.list(project_id),
+      interfaceList = await this.Model.list(project_id),
+      newCatList = [],
+      newInterfaceList = [];
+      // 标记分类文件夹 模糊匹配
+      for (let i = 0; i < catList.length; i++ ) {
+        const { name } = catList[i].toObject();
+        if(name.indexOf(query_text) > -1) {
+          let obj = catList[i].toObject();
+          obj.child_type = 0;
+          newCatList.push(obj); 
+        }
+      }
+      // 标记接口 模糊匹配
+      for (let i = 0 ; i < interfaceList.length; i++ ) {
+        const { title, path } = interfaceList[i].toObject();
+        if(title.indexOf(query_text) > -1 || path.indexOf(query_text) > -1 ) {
+          let obj = interfaceList[i].toObject();
+          obj.child_type = 1;
+          newInterfaceList.push(obj); 
+        }
+      }
+      let result = [...newCatList, ...newInterfaceList];
+      ctx.body = yapi.commons.resReturn(result);
+    } catch (e) {
+      yapi.commons.resReturn(null, 400, e.message);
     }
   }
 }

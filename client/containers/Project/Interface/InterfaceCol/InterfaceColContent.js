@@ -149,8 +149,9 @@ class InterfaceColContent extends Component {
       isShowCol: true,
       isRander: false
     });
+    let project_id = this.props.match.params.id;
 
-    let result = await this.props.fetchCaseList(newColId);
+    let result = await this.props.fetchCaseList(newColId, Number(project_id));
     if (result.payload.data.errcode === 0) {
       this.reports = handleReport(result.payload.data.colData.test_report);
       this.setState({
@@ -161,29 +162,31 @@ class InterfaceColContent extends Component {
       })
     }
 
-    await this.props.fetchCaseList(newColId);
+    await this.props.fetchCaseList(newColId, Number(project_id));
     await this.props.fetchCaseEnvList(newColId);
     this.changeCollapseClose();
     this.handleColdata(this.props.currCaseList);
   }
 
-  async componentWillMount() {
-    const result = await this.props.fetchInterfaceColList(this.props.match.params.id);
-    await this.props.getToken(this.props.match.params.id);
-    let { currColId } = this.props;
+  async componentDidMount() {
+    const { currColId } = this.props;
     const params = this.props.match.params;
     const { actionId } = params;
-    this.currColId = currColId = +actionId || result.payload.data.data[0]._id;
-    this.props.history.push('/project/' + params.id + '/interface/col/' + currColId);
-    if (currColId && currColId != 0) {
-      await this.handleColIdChange(currColId)
+    if(this.props.interfaceColList.length === 0) {
+      await this.props.fetchInterfaceColList(this.props.match.params.id);
     }
+    const firstColId = this.props.interfaceColList[0]._id;
+    await this.props.getToken(this.props.match.params.id);
 
+    this.currColId = currColId || +actionId || firstColId;
+    this.props.history.push('/project/' + params.id + '/interface/col/' + this.currColId);
+    if (this.currColId && this.currColId != 0) {
+      await this.handleColIdChange(this.currColId)
+    }
     this._crossRequestInterval = initCrossRequest(hasPlugin => {
       this.setState({ hasPlugin: hasPlugin });
     });
   }
-
   componentWillUnmount() {
     clearInterval(this._crossRequestInterval);
   }
@@ -239,7 +242,9 @@ class InterfaceColContent extends Component {
         item.req_headers = that.handleReqHeader(item.project_id, item.req_headers, item.case_env);
         return item;
       });
+      
     });
+ 
     this.setState({ rows: newRows });
   };
 
@@ -465,7 +470,7 @@ class InterfaceColContent extends Component {
     this.aceEditor.editor.insertCode(code);
   };
 
-  async componentWillReceiveProps(nextProps) {
+  async UNSAFE_componentWillReceiveProps(nextProps) {
     let newColId = !isNaN(nextProps.match.params.actionId) ? +nextProps.match.params.actionId : 0;
 
     if ((newColId && this.currColId && newColId !== this.currColId) || nextProps.isRander) {
@@ -531,7 +536,9 @@ class InterfaceColContent extends Component {
       isShowCol: true,
       isRander: false
     });
-    await this.props.fetchCaseList(currColId);
+    let project_id = this.props.match.params.id;
+    
+    await this.props.fetchCaseList(currColId, Number(project_id));
 
     this.handleColdata(this.props.currCaseList);
   };

@@ -11,6 +11,7 @@ class interfaceCol extends baseModel {
       name: { type: String, required: true },
       uid: { type: Number, required: true },
       project_id: { type: Number, required: true },
+      parent_id: { type: Number, required: true },
       desc: String,
       add_time: Number,
       up_time: Number,
@@ -71,12 +72,26 @@ class interfaceCol extends baseModel {
     });
   }
 
-  list(project_id) {
+  list(project_id, parent_id = -1, query_text) {
+    if (!query_text) {
+      return this.model
+      .find({
+        project_id,
+        parent_id,
+
+      })
+      .sort({ index: 1 })
+      .select('name uid project_id desc add_time up_time, index, parent_id')
+      .exec();
+    }
     return this.model
       .find({
-        project_id: project_id
+        project_id,
+        parent_id,
+        name: new RegExp(query_text + "+", "g"),
       })
-      .select('name uid project_id desc add_time up_time, index')
+      .sort({ index: 1 })
+      .select('name uid project_id desc add_time up_time, index, parent_id')
       .exec();
   }
 
